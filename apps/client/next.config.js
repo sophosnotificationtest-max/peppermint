@@ -16,6 +16,13 @@ module.exports = withPlugins(
     swcMinify: true,
     output: 'standalone',
 
+    // Configuração de i18n obrigatória para next-translate + Next.js 14+
+    i18n: {
+      locales: ['en', 'pt'], // ajuste conforme suas traduções
+      defaultLocale: 'en',
+      localeDetection: false, // ⚠ literal false necessário
+    },
+
     async rewrites() {
       return [
         {
