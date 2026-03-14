@@ -10,11 +10,9 @@ import { checkToken } from "./lib/jwt";
 import { prisma } from "./prisma";
 import { registerRoutes } from "./routes";
 
-// Garanta que o diretório de logs existe
 const logFilePath = "./logs.log";
 const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
-// Inicializa o Fastify com logger customizado
 const server: FastifyInstance = Fastify({
   logger: {
     stream: logStream,
@@ -23,12 +21,8 @@ const server: FastifyInstance = Fastify({
   trustProxy: true,
 });
 
-// Função assíncrona para registrar plugins antes das rotas
 const registerPlugins = async () => {
-  // Registra o parser de multipart/form-data (@fastify/multipart substitui fastify-multer)
   await server.register(multipart);
-  
-  // Registra o CORS
   await server.register(cors, {
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -36,10 +30,8 @@ const registerPlugins = async () => {
   });
 };
 
-// Registra todas as rotas
 registerRoutes(server);
 
-// Endpoint de health check
 server.get(
   "/",
   {
@@ -61,10 +53,8 @@ server.get(
   }
 );
 
-// Hook de autenticação JWT (exceto rotas públicas)
 server.addHook("preHandler", async function (request: any, reply: any) {
   try {
-    // Rotas públicas sem autenticação
     if (
       (request.url === "/api/v1/auth/login" && request.method === "POST") ||
       (request.url === "/api/v1/ticket/public/create" && request.method === "POST")
@@ -94,10 +84,8 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Registra plugins primeiro (await é crucial aqui)
     await registerPlugins();
 
-    // Executa prisma migrate deploy → generate → seed (sequencial)
     await new Promise<void>((resolve, reject) => {
       exec("npx prisma migrate deploy", (err, stdout, stderr) => {
         if (err) {
@@ -106,7 +94,6 @@ const start = async () => {
           return;
         }
         console.log("migrate deploy:", stdout);
-        console.error("migrate deploy stderr:", stderr);
 
         exec("npx prisma generate", (err, stdout, stderr) => {
           if (err) {
@@ -115,7 +102,6 @@ const start = async () => {
             return;
           }
           console.log("prisma generate:", stdout);
-          console.error("prisma generate stderr:", stderr);
 
           exec("npx prisma db seed", (err, stdout, stderr) => {
             if (err) {
@@ -124,14 +110,12 @@ const start = async () => {
               return;
             }
             console.log("prisma db seed:", stdout);
-            console.error("prisma db seed stderr:", stderr);
             resolve();
           });
         });
       });
     });
 
-    // Conecta ao banco
     await prisma.$connect();
     server.log.info("Connected to Prisma");
 
@@ -147,7 +131,6 @@ const start = async () => {
 
     console.info(`Server listening on http://0.0.0.0:${port}`);
 
-    // Intervalo para checar emails
     setInterval(() => getEmails(), 10000);
   } catch (err) {
     server.log.error("Startup error:", err);
