@@ -94,7 +94,7 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Registra plugins primeiro
+    // Registra plugins primeiro (await é crucial aqui)
     await registerPlugins();
 
     // Executa prisma migrate deploy → generate → seed (sequencial)
