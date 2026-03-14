@@ -23,14 +23,7 @@ const server: FastifyInstance = Fastify({
   trustProxy: true,
 });
 
-// Registra o CORS com await para compatibilidade com tipos modernos
-await server.register(cors, {
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-} as const);
-
-// Registra o parser de multipart/form-data (multer)
+// Registra o parser de multipart/form-data (multer) - sem await aqui
 server.register(multer.contentParser);
 
 // Registra todas as rotas
@@ -86,6 +79,14 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
+    // Registra o CORS **dentro da função async** (resolve top-level await)
+    // @ts-ignore - bypass temporário para mismatch de tipos no Fastify (comum em v4/v5)
+    await server.register(cors, {
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+    } as const);
+
     // Executa prisma migrate deploy, generate e seed (sequencial)
     await new Promise<void>((resolve, reject) => {
       exec("npx prisma migrate deploy", (err, stdout, stderr) => {
