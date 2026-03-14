@@ -1,29 +1,22 @@
 {
-  "private": true,
   "name": "peppermint",
+  "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "@types/react": "18.2.38",
-    "@types/react-dom": "^18",
-    "prettier": "^2.5.1",
-    "turbo": "^2.0.3"
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.2"
   },
+  "packageManager": "yarn@4.2.2",
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "packageManager": "yarn@4.2.2",
-  "dependencies": {
-    "fastify": "^5.1.0",
-    "next": "^14.2.15",
-    "nextra": "^3.0.15",
-    "nextra-theme-docs": "^3.0.15",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  }
+  ]
 }
