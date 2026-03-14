@@ -1,9 +1,8 @@
-import cors from "@fastify/cors";
 import "dotenv/config";
 import Fastify, { FastifyInstance } from "fastify";
+import cors from "@fastify/cors";
 import multer from "fastify-multer";
 import fs from "fs";
-
 import { exec } from "child_process";
 import { track } from "./lib/hog";
 import { getEmails } from "./lib/imap";
@@ -11,36 +10,38 @@ import { checkToken } from "./lib/jwt";
 import { prisma } from "./prisma";
 import { registerRoutes } from "./routes";
 
-// Ensure the directory exists
-const logFilePath = "./logs.log"; // Update this path to a writable location
-
-// Create a writable stream
+// Garanta que o diretório de logs existe
+const logFilePath = "./logs.log";
 const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
-// Initialize Fastify with logger
+// Inicializa o Fastify com logger customizado
 const server: FastifyInstance = Fastify({
   logger: {
-    stream: logStream, // Use the writable stream
+    stream: logStream,
   },
   disableRequestLogging: true,
   trustProxy: true,
 });
-server.register(cors, {
+
+// Registra o CORS com await para compatibilidade com tipos modernos
+await server.register(cors, {
   origin: "*",
-
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-});
+} as const);
 
+// Registra o parser de multipart/form-data (multer)
 server.register(multer.contentParser);
 
+// Registra todas as rotas
 registerRoutes(server);
 
+// Endpoint de health check
 server.get(
   "/",
   {
     schema: {
-      tags: ["health"], // This groups the endpoint under a category
+      tags: ["health"],
       description: "Health check endpoint",
       response: {
         200: {
@@ -52,24 +53,28 @@ server.get(
       },
     },
   },
-  async function (request, response) {
-    response.send({ healthy: true });
+  async function (request, reply) {
+    reply.send({ healthy: true });
   }
 );
 
-// JWT authentication hook
+// Hook de autenticação JWT (exceto rotas públicas)
 server.addHook("preHandler", async function (request: any, reply: any) {
   try {
-    if (request.url === "/api/v1/auth/login" && request.method === "POST") {
-      return true;
-    }
+    // Rotas públicas sem autenticação
     if (
-      request.url === "/api/v1/ticket/public/create" &&
-      request.method === "POST"
+      (request.url === "/api/v1/auth/login" && request.method === "POST") ||
+      (request.url === "/api/v1/ticket/public/create" && request.method === "POST")
     ) {
-      return true;
+      return;
     }
-    const bearer = request.headers.authorization!.split(" ")[1];
+
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
+    const bearer = authHeader.split(" ")[1];
     checkToken(bearer);
   } catch (err) {
     reply.status(401).send({
@@ -81,64 +86,58 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Run prisma generate and migrate commands before starting the server
+    // Executa prisma migrate deploy, generate e seed (sequencial)
     await new Promise<void>((resolve, reject) => {
       exec("npx prisma migrate deploy", (err, stdout, stderr) => {
         if (err) {
-          console.error(err);
+          console.error("Migrate deploy error:", err);
           reject(err);
+          return;
         }
         console.log(stdout);
         console.error(stderr);
 
         exec("npx prisma generate", (err, stdout, stderr) => {
           if (err) {
-            console.error(err);
+            console.error("Prisma generate error:", err);
             reject(err);
+            return;
           }
           console.log(stdout);
           console.error(stderr);
-        });
 
-        exec("npx prisma db seed", (err, stdout, stderr) => {
-          if (err) {
-            console.error(err);
-            reject(err);
-          }
-          console.log(stdout);
-          console.error(stderr);
-          resolve();
+          exec("npx prisma db seed", (err, stdout, stderr) => {
+            if (err) {
+              console.error("Seed error:", err);
+              reject(err);
+              return;
+            }
+            console.log(stdout);
+            console.error(stderr);
+            resolve();
+          });
         });
       });
     });
 
-    // connect to database
+    // Conecta ao banco
     await prisma.$connect();
     server.log.info("Connected to Prisma");
 
     const port = 5003;
+    await server.listen({ port: Number(port), host: "0.0.0.0" });
 
-    server.listen(
-      { port: Number(port), host: "0.0.0.0" },
-      async (err, address) => {
-        if (err) {
-          console.error(err);
-          process.exit(1);
-        }
+    const client = track();
+    client.capture({
+      event: "server_started",
+      distinctId: "uuid",
+    });
+    client.shutdownAsync();
 
-        const client = track();
+    console.info(`Server listening on http://0.0.0.0:${port}`);
 
-        client.capture({
-          event: "server_started",
-          distinctId: "uuid",
-        });
-
-        client.shutdownAsync();
-        console.info(`Server listening on ${address}`);
-      }
-    );
-
-    setInterval(() => getEmails(), 10000); // Call getEmails every minute
+    // Intervalo para checar emails
+    setInterval(() => getEmails(), 10000);
   } catch (err) {
     server.log.error(err);
     await prisma.$disconnect();
