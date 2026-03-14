@@ -74,6 +74,7 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
     checkToken(bearer);
   } catch (err: any) {
+    // @ts-ignore - ignora tipo unknown no logger (err pode ser any)
     server.log.error("Auth error:", err.message || err);
     reply.status(401).send({
       message: "Unauthorized",
@@ -84,9 +85,9 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Registra o CORS dentro da função async
-    // @ts-ignore - ignora mismatch temporário de tipos no FastifyInstance vs @fastify/cors
-    await server.register(cors, {
+    // Registra o CORS (sem await - register é sync na maioria dos casos para cors)
+    // @ts-ignore - ignora mismatch de tipos entre FastifyInstance e @fastify/cors (comum em versões mistas)
+    server.register(cors, {
       origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization", "Accept"],
