@@ -1,5 +1,4 @@
-// next.config.js
-const withPlugins = require('next-compose-plugins');
+// next.config.js - Versão sem next-compose-plugins (mais confiável)
 const removeImports = require('next-remove-imports')();
 const nextTranslate = require('next-translate');
 const withPWA = require('next-pwa')({
@@ -10,13 +9,12 @@ const withPWA = require('next-pwa')({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const baseConfig = {
   reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
 
-  // Configuração de i18n obrigatória para next-translate + Next.js 14+
-  // localeDetection deve ser literalmente false (booleano)
+  // i18n - CRÍTICO: deve ser exatamente false (booleano), não string
   i18n: {
     locales: ['en', 'pt'],
     defaultLocale: 'en',
@@ -32,22 +30,18 @@ const nextConfig = {
     ];
   },
 
-  // Configuração de imagens
   images: {
     domains: ['localhost'],
     unoptimized: process.env.NODE_ENV === 'development',
   },
 
-  // Variáveis de ambiente disponíveis no build
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003',
   },
 
-  // Webpack config para módulos nativos
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
-        ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
@@ -59,7 +53,8 @@ const nextConfig = {
   },
 };
 
-module.exports = withPlugins(
-  [removeImports, nextTranslate, withPWA],
-  nextConfig
-);
+// Aplica plugins manualmente na ordem correta
+// 1. next-translate → 2. removeImports → 3. PWA
+const withNextTranslate = nextTranslate(baseConfig);
+const withRemoveImports = removeImports(withNextTranslate);
+module.exports = withPWA(withRemoveImports);
