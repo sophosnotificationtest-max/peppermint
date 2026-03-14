@@ -23,7 +23,7 @@ const server: FastifyInstance = Fastify({
   trustProxy: true,
 });
 
-// Registra o parser de multipart/form-data (multer) - sem await aqui
+// Registra o parser de multipart/form-data (multer)
 server.register(multer.contentParser);
 
 // Registra todas as rotas
@@ -67,9 +67,14 @@ server.addHook("preHandler", async function (request: any, reply: any) {
       throw new Error("No authorization header");
     }
 
-    const bearer = authHeader.split(" ")[1];
+    const [, bearer] = authHeader.split(" ");
+    if (!bearer) {
+      throw new Error("Invalid authorization format");
+    }
+
     checkToken(bearer);
-  } catch (err) {
+  } catch (err: any) {
+    server.log.error("Auth error:", err.message);
     reply.status(401).send({
       message: "Unauthorized",
       success: false,
@@ -79,42 +84,42 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Registra o CORS **dentro da função async** (resolve top-level await)
-    // @ts-ignore - bypass temporário para mismatch de tipos no Fastify (comum em v4/v5)
+    // Registra o CORS dentro da função async
+    // @ts-ignore - ignora mismatch temporário de tipos no FastifyInstance vs @fastify/cors (comum em v4/v5)
     await server.register(cors, {
       origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     } as const);
 
-    // Executa prisma migrate deploy, generate e seed (sequencial)
+    // Executa prisma migrate deploy → generate → seed (sequencial)
     await new Promise<void>((resolve, reject) => {
       exec("npx prisma migrate deploy", (err, stdout, stderr) => {
         if (err) {
-          console.error("Migrate deploy error:", err);
+          console.error("prisma migrate deploy error:", err);
           reject(err);
           return;
         }
-        console.log(stdout);
-        console.error(stderr);
+        console.log("migrate deploy:", stdout);
+        console.error("migrate deploy stderr:", stderr);
 
         exec("npx prisma generate", (err, stdout, stderr) => {
           if (err) {
-            console.error("Prisma generate error:", err);
+            console.error("prisma generate error:", err);
             reject(err);
             return;
           }
-          console.log(stdout);
-          console.error(stderr);
+          console.log("prisma generate:", stdout);
+          console.error("prisma generate stderr:", stderr);
 
           exec("npx prisma db seed", (err, stdout, stderr) => {
             if (err) {
-              console.error("Seed error:", err);
+              console.error("prisma db seed error:", err);
               reject(err);
               return;
             }
-            console.log(stdout);
-            console.error(stderr);
+            console.log("prisma db seed:", stdout);
+            console.error("prisma db seed stderr:", stderr);
             resolve();
           });
         });
@@ -140,7 +145,7 @@ const start = async () => {
     // Intervalo para checar emails
     setInterval(() => getEmails(), 10000);
   } catch (err) {
-    server.log.error(err);
+    server.log.error("Startup error:", err);
     await prisma.$disconnect();
     process.exit(1);
   }
