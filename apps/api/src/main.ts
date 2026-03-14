@@ -1,7 +1,7 @@
 import "dotenv/config";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
-import multer from "fastify-multer";
+import multipart from "@fastify/multipart";
 import fs from "fs";
 import { exec } from "child_process";
 import { track } from "./lib/hog";
@@ -23,8 +23,18 @@ const server: FastifyInstance = Fastify({
   trustProxy: true,
 });
 
-// Registra o parser de multipart/form-data (multer)
-server.register(multer.contentParser);
+// Função assíncrona para registrar plugins antes das rotas
+const registerPlugins = async () => {
+  // Registra o parser de multipart/form-data (@fastify/multipart substitui fastify-multer)
+  await server.register(multipart);
+  
+  // Registra o CORS
+  await server.register(cors, {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  });
+};
 
 // Registra todas as rotas
 registerRoutes(server);
@@ -74,7 +84,6 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
     checkToken(bearer);
   } catch (err: any) {
-    // @ts-ignore - ignora tipo unknown no logger (err pode ser any)
     server.log.error("Auth error:", err.message || err);
     reply.status(401).send({
       message: "Unauthorized",
@@ -85,13 +94,8 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    // Registra o CORS (sem await - register é sync na maioria dos casos para cors)
-    // @ts-ignore - ignora mismatch de tipos entre FastifyInstance e @fastify/cors (comum em versões mistas)
-    server.register(cors, {
-      origin: "*",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-      allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    } as const);
+    // Registra plugins primeiro
+    await registerPlugins();
 
     // Executa prisma migrate deploy → generate → seed (sequencial)
     await new Promise<void>((resolve, reject) => {
@@ -146,7 +150,6 @@ const start = async () => {
     // Intervalo para checar emails
     setInterval(() => getEmails(), 10000);
   } catch (err) {
-    // @ts-ignore - ignora tipo unknown no logger (err pode ser any/unknown)
     server.log.error("Startup error:", err);
     await prisma.$disconnect();
     process.exit(1);
