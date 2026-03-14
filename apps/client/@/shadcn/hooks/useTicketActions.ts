@@ -1,3 +1,4 @@
+// @/shadcn/hooks/useTicketActions.ts
 import { Ticket } from '@/shadcn/types/tickets';
 import { toast } from "../hooks/use-toast";
 
@@ -74,7 +75,7 @@ export function useTicketActions(token: string, refetch: () => void) {
         },
         body: JSON.stringify({
           id: ticket.id,
-          detail: ticket.detail,
+          detail: ticket.detail ?? '', // fallback se detail não existir
           note: ticket.note,
           title: ticket.title,
           priority: priority,
