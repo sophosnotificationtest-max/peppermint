@@ -1,4 +1,3 @@
-// next.config.js - Versão sem next-compose-plugins (mais confiável)
 const removeImports = require('next-remove-imports')();
 const nextTranslate = require('next-translate');
 const withPWA = require('next-pwa')({
@@ -14,7 +13,6 @@ const baseConfig = {
   swcMinify: true,
   output: 'standalone',
 
-  // i18n - CRÍTICO: deve ser exatamente false (booleano), não string
   i18n: {
     locales: ['en', 'pt'],
     defaultLocale: 'en',
@@ -53,8 +51,6 @@ const baseConfig = {
   },
 };
 
-// Aplica plugins manualmente na ordem correta
-// 1. next-translate → 2. removeImports → 3. PWA
 const withNextTranslate = nextTranslate(baseConfig);
 const withRemoveImports = removeImports(withNextTranslate);
 module.exports = withPWA(withRemoveImports);
