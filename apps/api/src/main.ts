@@ -74,7 +74,7 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
     checkToken(bearer);
   } catch (err: any) {
-    server.log.error("Auth error:", err.message);
+    server.log.error("Auth error:", err.message || err);
     reply.status(401).send({
       message: "Unauthorized",
       success: false,
@@ -85,7 +85,7 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 const start = async () => {
   try {
     // Registra o CORS dentro da função async
-    // @ts-ignore - ignora mismatch temporário de tipos no FastifyInstance vs @fastify/cors (comum em v4/v5)
+    // @ts-ignore - ignora mismatch temporário de tipos no FastifyInstance vs @fastify/cors
     await server.register(cors, {
       origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -145,6 +145,7 @@ const start = async () => {
     // Intervalo para checar emails
     setInterval(() => getEmails(), 10000);
   } catch (err) {
+    // @ts-ignore - ignora tipo unknown no logger (err pode ser any/unknown)
     server.log.error("Startup error:", err);
     await prisma.$disconnect();
     process.exit(1);
