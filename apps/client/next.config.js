@@ -13,10 +13,11 @@ const baseConfig = {
   swcMinify: true,
   output: 'standalone',
 
+  // i18n - CRÍTICO: localeDetection deve ser literalmente false (booleano)
   i18n: {
     locales: ['en', 'pt'],
     defaultLocale: 'en',
-    localeDetection: false,
+    localeDetection: false, // Booleano literal, não string ou undefined
   },
 
   async rewrites() {
@@ -51,6 +52,8 @@ const baseConfig = {
   },
 };
 
+// Aplica plugins na ordem correta
+// 1. next-translate → 2. removeImports → 3. PWA
 const withNextTranslate = nextTranslate(baseConfig);
 const withRemoveImports = removeImports(withNextTranslate);
 module.exports = withPWA(withRemoveImports);
