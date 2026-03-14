@@ -1,7 +1,7 @@
 import "dotenv/config";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
-import multipart from "@fastify/multipart";
+import multer from "fastify-multer";
 import fs from "fs";
 import { exec } from "child_process";
 import { track } from "./lib/hog";
@@ -21,17 +21,18 @@ const server: FastifyInstance = Fastify({
   trustProxy: true,
 });
 
-const registerPlugins = async () => {
-  await server.register(multipart);
-  await server.register(cors, {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  });
-};
+// Registra plugins (Fastify 4 - não precisa de await na maioria dos casos)
+server.register(multer.contentParser);
+server.register(cors, {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+});
 
+// Registra todas as rotas
 registerRoutes(server);
 
+// Endpoint de health check
 server.get(
   "/",
   {
@@ -53,6 +54,7 @@ server.get(
   }
 );
 
+// Hook de autenticação JWT (exceto rotas públicas)
 server.addHook("preHandler", async function (request: any, reply: any) {
   try {
     if (
@@ -84,8 +86,7 @@ server.addHook("preHandler", async function (request: any, reply: any) {
 
 const start = async () => {
   try {
-    await registerPlugins();
-
+    // Executa prisma migrate deploy → generate → seed (sequencial)
     await new Promise<void>((resolve, reject) => {
       exec("npx prisma migrate deploy", (err, stdout, stderr) => {
         if (err) {
@@ -116,6 +117,7 @@ const start = async () => {
       });
     });
 
+    // Conecta ao banco
     await prisma.$connect();
     server.log.info("Connected to Prisma");
 
