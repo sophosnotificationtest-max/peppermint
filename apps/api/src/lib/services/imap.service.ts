@@ -5,12 +5,17 @@ import { prisma } from "../../prisma";
 import { EmailConfig, EmailQueue } from "../types/email";
 import { AuthService } from "./auth.service";
 
+// Interfaces para tipagem do IMAP
 interface ImapError extends Error {
   message: string;
 }
 
 interface ImapMessage {
   seqno: number;
+  on(event: "body", callback: (stream: NodeJS.ReadableStream, info: any) => void): void;
+  on(event: string, callback: (...args: any[]) => void): void;
+  once(event: "attributes", callback: (attrs: ImapAttributes) => void): void;
+  once(event: string, callback: (...args: any[]) => void): void;
 }
 
 interface ImapAttributes {
