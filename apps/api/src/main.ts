@@ -128,8 +128,9 @@ const start = async () => {
     console.info(`Server listening on http://0.0.0.0:${port}`);
 
     setInterval(() => getEmails(), 10000);
-  } catch (err) {
-    server.log.error("Startup error:", err);
+  } catch (err: any) {
+    // CORRIGIDO: Tipagem explícita do erro
+    server.log.error("Startup error:", err.message || String(err));
     await prisma.$disconnect();
     process.exit(1);
   }
