@@ -1,9 +1,24 @@
 import EmailReplyParser from "email-reply-parser";
 import Imap from "imap";
-import { simpleParser } from "mailparser";
+import { simpleParser, ParsedMail } from "mailparser";
 import { prisma } from "../../prisma";
 import { EmailConfig, EmailQueue } from "../types/email";
 import { AuthService } from "./auth.service";
+
+interface ImapError extends Error {
+  message: string;
+}
+
+interface ImapMessage {
+  seqno: number;
+}
+
+interface ImapAttributes {
+  uid: number;
+  flags: string[];
+  date: Date;
+  struct: any[];
+}
 
 function getReplyText(email: any): string {
   const parsed = new EmailReplyParser().read(email.text);
@@ -56,7 +71,7 @@ export class ImapService {
   }
 
   private static async processEmail(
-    parsed: any,
+    parsed: ParsedMail,
     isReply: boolean
   ): Promise<void> {
     const { from, subject, text, html, textAsHtml } = parsed;
@@ -65,7 +80,7 @@ export class ImapService {
 
     if (isReply) {
       // First try to match UUID format
-      const uuidMatch = subject.match(
+      const uuidMatch = subject?.match(
         /(?:ref:|#)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
       );
       console.log("UUID MATCH", uuidMatch);
@@ -98,14 +113,14 @@ export class ImapService {
           userId: null,
           ticketId: ticket.id,
           reply: true,
-          replyEmail: from.value[0].address,
+          replyEmail: from?.value[0]?.address || "unknown",
           public: true,
         },
       });
     } else {
       const imapEmail = await prisma.imap_Email.create({
         data: {
-          from: from.value[0].address,
+          from: from?.value[0]?.address || "unknown",
           subject: subject || "No Subject",
           body: text || "No Body",
           html: html || "",
@@ -115,13 +130,13 @@ export class ImapService {
 
       await prisma.ticket.create({
         data: {
-          email: from.value[0].address,
-          name: from.value[0].name,
+          email: from?.value[0]?.address || "unknown",
+          name: from?.value[0]?.name || "",
           title: imapEmail.subject || "-",
           isComplete: false,
           priority: "low",
           fromImap: true,
-          detail: html || textAsHtml,
+          detail: html || textAsHtml || "",
         },
       });
     }
@@ -144,27 +159,27 @@ export class ImapService {
         // @ts-ignore
         const imap = new Imap(imapConfig);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           imap.once("ready", () => {
-            imap.openBox("INBOX", false, (err) => {
+            imap.openBox("INBOX", false, (err: ImapError | null) => {
               if (err) {
                 reject(err);
                 return;
               }
-              imap.search(["UNSEEN", ["ON", today]], (err, results) => {
+              imap.search(["UNSEEN", ["ON", today]], (err: ImapError | null, results: number[]) => {
                 if (err) reject(err);
                 if (!results?.length) {
                   console.log("No new messages");
                   imap.end();
-                  resolve(null);
+                  resolve();
                   return;
                 }
 
                 const fetch = imap.fetch(results, { bodies: "" });
 
-                fetch.on("message", (msg) => {
-                  msg.on("body", (stream) => {
-                    simpleParser(stream, async (err, parsed) => {
+                fetch.on("message", (msg: ImapMessage, seqno: number) => {
+                  msg.on("body", (stream: NodeJS.ReadableStream, info: any) => {
+                    simpleParser(stream, async (err: Error | null, parsed: ParsedMail) => {
                       if (err) throw err;
                       const subjectLower = parsed.subject?.toLowerCase() || "";
                       const isReply =
@@ -174,27 +189,28 @@ export class ImapService {
                     });
                   });
 
-                  msg.once("attributes", (attrs) => {
-                    imap.addFlags(attrs.uid, ["\\Seen"], () => {
+                  msg.once("attributes", (attrs: ImapAttributes) => {
+                    imap.addFlags(attrs.uid, ["\\Seen"], (err: ImapError | null) => {
+                      if (err) console.error("Error marking as read:", err);
                       console.log("Marked as read!");
                     });
                   });
                 });
 
-                fetch.once("error", reject);
+                fetch.once("error", (err: ImapError) => reject(err));
                 fetch.once("end", () => {
                   console.log("Done fetching messages");
                   imap.end();
-                  resolve(null);
+                  resolve();
                 });
               });
             });
           });
 
-          imap.once("error", reject);
+          imap.once("error", (err: ImapError) => reject(err));
           imap.once("end", () => {
             console.log("Connection ended");
-            resolve(null);
+            resolve();
           });
 
           imap.connect();
