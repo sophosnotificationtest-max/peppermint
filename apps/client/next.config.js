@@ -1,5 +1,4 @@
 const removeImports = require('next-remove-imports')();
-const nextTranslate = require('next-translate');
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -8,17 +7,11 @@ const withPWA = require('next-pwa')({
 });
 
 /** @type {import('next').NextConfig} */
-const baseConfig = {
+const config = {
   reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
-
-  // i18n - CRÍTICO: localeDetection deve ser literalmente false (booleano)
-  i18n: {
-    locales: ['en', 'pt'],
-    defaultLocale: 'en',
-    localeDetection: false, // Booleano literal, não string ou undefined
-  },
+  // i18n REMOVIDO COMPLETAMENTE
 
   async rewrites() {
     return [
@@ -52,8 +45,4 @@ const baseConfig = {
   },
 };
 
-// Aplica plugins na ordem correta
-// 1. next-translate → 2. removeImports → 3. PWA
-const withNextTranslate = nextTranslate(baseConfig);
-const withRemoveImports = removeImports(withNextTranslate);
-module.exports = withPWA(withRemoveImports);
+module.exports = withPWA(removeImports(config));
