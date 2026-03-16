@@ -10,7 +10,7 @@
     "generate": "prisma generate",
     "db:push": "prisma db push --accept-data-loss",
     "db:migrate": "prisma migrate dev",
-    "build": "tsc --skipLibCheck || echo 'Type errors ignored' && mkdir -p dist && cp -r src/* dist/ 2>/dev/null || true",
+    "build": "tsc --skipLibCheck",
     "dev": "ts-node-dev --respawn src/main.ts",
     "start": "node dist/main.js"
   },
