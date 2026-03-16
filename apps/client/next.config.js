@@ -11,7 +11,6 @@ const config = {
   reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
-  // i18n REMOVIDO COMPLETAMENTE
 
   async rewrites() {
     return [
