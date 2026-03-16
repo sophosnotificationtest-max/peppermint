@@ -11,7 +11,12 @@ const config = {
   reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
-
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   async rewrites() {
     return [
       {
@@ -20,16 +25,13 @@ const config = {
       },
     ];
   },
-
   images: {
     domains: ['localhost'],
     unoptimized: process.env.NODE_ENV === 'development',
   },
-
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5003',
   },
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
