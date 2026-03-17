@@ -184,6 +184,22 @@ app.get('/api/portal/tickets/:id', requireCustomer, (req, res) => {
   res.json(t);
 });
 
+// -- Change password
+app.post("/api/auth/change-password", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  const p = token ? verifyJWT(token) : null;
+  if (!p) return res.status(401).json({ error: "Nao autorizado" });
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: "Preencha todos os campos" });
+  if (newPassword.length < 6) return res.status(400).json({ error: "Nova senha deve ter pelo menos 6 caracteres" });
+  const list = p.role === "agent" ? agentUsers : customerUsers;
+  const idx = list.findIndex(u => u.id === p.id);
+  if (idx === -1) return res.status(404).json({ error: "Usuario nao encontrado" });
+  if (list[idx].pw !== hashPw(currentPassword)) return res.status(401).json({ error: "Senha atual incorreta" });
+  list[idx].pw = hashPw(newPassword);
+  res.json({ message: "Senha alterada com sucesso" });
+});
+
 // ── Health ────────────────────────────────────────────────────────
 app.get('/health', (_,res)=>res.json({ok:true}));
 
