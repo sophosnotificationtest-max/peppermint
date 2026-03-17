@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhronexSec | Support Portal</title>
+<link rel="icon" type="image/png" href="phronexsec-logo.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #0076f5;
+  --blue-dim: rgba(0,118,245,0.15);
+  --blue-border: rgba(0,118,245,0.35);
+  --dark: #02060c;
+  --card-bg: rgba(10,18,35,0.75);
+}
+*{box-sizing:border-box;}
+body{background:var(--dark);color:#e2e8f0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;}
+h1,h2,h3,h4{letter-spacing:-0.02em;line-height:1.15;}
+p,li{font-weight:300;}
+canvas{position:fixed;top:0;left:0;z-index:0;pointer-events:none;}
+
+/* ── Sidebar ── */
+.sidebar{width:240px;min-width:240px;background:rgba(10,18,35,0.9);border-right:1px solid rgba(0,118,245,0.15);display:flex;flex-direction:column;position:relative;z-index:10;backdrop-filter:blur(20px);}
+.sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(0,118,245,0.4),transparent);pointer-events:none;}
+.logo-area{padding:22px 18px 18px;border-bottom:1px solid rgba(0,118,245,0.12);}
+.logo-area img{height:38px;filter:drop-shadow(0 0 8px rgba(0,118,245,.6));}
+.logo-tag{font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e3a5f;letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.sys-status{display:flex;align-items:center;gap:6px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#22c55e;}
+.sys-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+.nav{padding:14px 10px;flex:1;display:flex;flex-direction:column;gap:2px;}
+.nav-section{font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e3a5f;letter-spacing:2px;padding:10px 10px 6px;text-transform:uppercase;}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:#64748b;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;position:relative;}
+.nav-btn:hover{background:rgba(0,118,245,0.07);color:#e2e8f0;}
+.nav-btn.active{background:rgba(0,118,245,0.12);color:#60a5fa;border:1px solid rgba(0,118,245,0.2);}
+.nav-btn.active::before{content:'';position:absolute;left:0;top:20%;height:60%;width:2px;background:var(--blue);border-radius:2px;box-shadow:0 0 8px var(--blue);}
+.nav-badge{margin-left:auto;background:rgba(0,118,245,0.15);color:#60a5fa;border:1px solid rgba(0,118,245,0.3);font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 8px;border-radius:20px;}
+
+.sidebar-foot{padding:14px;border-top:1px solid rgba(0,118,245,0.1);}
+.agent-pill{display:flex;align-items:center;gap:10px;background:rgba(0,118,245,0.06);border:1px solid rgba(0,118,245,0.12);border-radius:10px;padding:10px 12px;}
+.av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#001933,rgba(0,118,245,0.4));border:1px solid rgba(0,118,245,0.4);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#60a5fa;flex-shrink:0;}
+.agent-name{font-size:12px;font-weight:600;color:#e2e8f0;}
+.agent-role{font-family:'JetBrains Mono',monospace;font-size:9px;color:#3b82f6;letter-spacing:1px;}
+
+/* ── Main ── */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;z-index:5;}
+.topbar{padding:0 28px;border-bottom:1px solid rgba(0,118,245,0.12);background:rgba(2,6,12,0.8);display:flex;align-items:center;gap:16px;height:60px;flex-shrink:0;backdrop-filter:blur(20px);}
+.topbar h1{font-size:16px;font-weight:700;flex:1;letter-spacing:-0.01em;}
+.search-wrap{position:relative;}
+.search{background:rgba(10,18,35,0.8);border:1px solid rgba(0,118,245,0.2);border-radius:9px;padding:8px 12px 8px 34px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:#e2e8f0;width:220px;outline:none;transition:border .15s;}
+.search:focus{border-color:var(--blue);}
+.search::placeholder{color:#334155;}
+.search-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#334155;font-size:13px;pointer-events:none;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:#2d8fff;box-shadow:0 6px 20px rgba(0,118,245,0.4);transform:translateY(-1px);}
+.btn-ghost{background:rgba(10,18,35,0.8);color:#94a3b8;border:1px solid rgba(30,58,138,0.3);}
+.btn-ghost:hover{border-color:var(--blue);color:#e2e8f0;}
+.btn-danger{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);}
+.btn-danger:hover{background:rgba(239,68,68,0.2);}
+.btn-sm{padding:5px 12px;font-size:11px;}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:24px 28px;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(0,118,245,0.3);border-radius:3px;}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid rgba(30,58,138,.25);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:.3s;}
+.stat-card:hover{border-color:rgba(0,118,245,0.4);transform:translateY(-3px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-open::before{background:linear-gradient(90deg,#0076f5,#60a5fa);}
+.stat-prog::before{background:linear-gradient(90deg,#f59e0b,#fcd34d);}
+.stat-res::before{background:linear-gradient(90deg,#22c55e,#86efac);}
+.stat-urg::before{background:linear-gradient(90deg,#ef4444,#fca5a5);}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:#334155;text-transform:uppercase;letter-spacing:2px;}
+.stat-val{font-size:38px;font-weight:800;margin-top:4px;line-height:1;}
+.stat-open .stat-val{color:#60a5fa;}
+.stat-prog .stat-val{color:#fcd34d;}
+.stat-res .stat-val{color:#86efac;}
+.stat-urg .stat-val{color:#fca5a5;}
+
+/* ── Table ── */
+.table-wrap{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid rgba(30,58,138,.25);border-radius:14px;overflow:hidden;}
+.table{width:100%;border-collapse:collapse;}
+.table th{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#1e3a5f;padding:12px 16px;text-align:left;border-bottom:1px solid rgba(30,58,138,.3);background:rgba(0,0,0,.3);}
+.table td{padding:14px 16px;border-bottom:1px solid rgba(30,58,138,.15);font-size:13px;vertical-align:middle;}
+.table tr:last-child td{border-bottom:none;}
+.table tbody tr{transition:background .15s;cursor:pointer;}
+.table tbody tr:hover td{background:rgba(0,118,245,0.05);}
+.tid{font-family:'JetBrains Mono',monospace;font-size:11px;color:#1e4a8a;}
+.ttitle{font-weight:600;color:#e2e8f0;}
+.tcat{font-family:'JetBrains Mono',monospace;font-size:10px;color:#334155;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.b-open{background:rgba(0,118,245,0.12);color:#60a5fa;border:1px solid rgba(0,118,245,0.2);}
+.b-in_progress{background:rgba(245,158,11,0.12);color:#fcd34d;border:1px solid rgba(245,158,11,0.2);}
+.b-resolved{background:rgba(34,197,94,0.12);color:#86efac;border:1px solid rgba(34,197,94,0.2);}
+.b-closed{background:rgba(255,255,255,0.05);color:#475569;border:1px solid rgba(255,255,255,0.08);}
+.b-high{background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.2);}
+.b-medium{background:rgba(245,158,11,0.12);color:#fcd34d;border:1px solid rgba(245,158,11,0.2);}
+.b-low{background:rgba(255,255,255,0.05);color:#475569;border:1px solid rgba(255,255,255,0.08);}
+.b-critical{background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.35);}
+
+/* ── Filters ── */
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.fsel{background:rgba(10,18,35,0.8);border:1px solid rgba(30,58,138,.3);border-radius:8px;padding:7px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;color:#94a3b8;outline:none;cursor:pointer;transition:border .15s;}
+.fsel:focus{border-color:var(--blue);}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(2,6,12,0.88);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s ease;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-box{background:linear-gradient(145deg,#0a1223,#060e1c);border:1px solid var(--blue-border);border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;transform:translateY(30px) scale(.97);transition:transform .35s cubic-bezier(.22,1,.36,1);box-shadow:0 40px 100px -20px rgba(0,0,0,.8),0 0 0 1px rgba(0,118,245,.1),inset 0 1px 0 rgba(255,255,255,.05);}
+.modal-box.wide{max-width:720px;}
+.modal-overlay.open .modal-box{transform:translateY(0) scale(1);}
+.modal-box::-webkit-scrollbar{width:4px;}
+.modal-box::-webkit-scrollbar-thumb{background:var(--blue);border-radius:4px;}
+.mhead{padding:28px 28px 20px;border-bottom:1px solid rgba(30,58,138,.3);position:sticky;top:0;background:linear-gradient(145deg,#0a1223,#060e1c);z-index:10;border-radius:20px 20px 0 0;display:flex;align-items:flex-start;justify-content:space-between;}
+.mhead-info{}
+.mclose{background:rgba(0,118,245,.08);border:1px solid rgba(30,58,138,.4);color:#64748b;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;}
+.mclose:hover{background:rgba(0,118,245,.2);color:#fff;border-color:var(--blue);}
+.mbody{padding:24px 28px 32px;}
+.mfooter{padding:16px 28px;border-top:1px solid rgba(30,58,138,.3);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ── Form ── */
+.fgroup{margin-bottom:16px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.flabel{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;color:#1e4a8a;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
+.finput,.ftarea,.fctrl{width:100%;background:#0a1223;border:1px solid rgba(30,58,138,.4);border-radius:10px;padding:10px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:#e2e8f0;outline:none;transition:border .15s;}
+.finput:focus,.ftarea:focus,.fctrl:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,118,245,.08);}
+.finput::placeholder,.ftarea::placeholder{color:#1e3a5f;}
+.ftarea{resize:vertical;min-height:80px;}
+
+/* ── Detail layout ── */
+.detail-grid{display:grid;grid-template-columns:1fr 200px;gap:20px;}
+.dsection{background:rgba(0,118,245,0.04);border:1px solid rgba(30,58,138,.2);border-radius:12px;padding:16px;margin-bottom:14px;}
+.dsection-title{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#1e4a8a;margin-bottom:12px;}
+.irow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px;}
+.irow:last-child{margin-bottom:0;}
+.ilabel{color:#1e4a8a;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;}
+.ival{font-weight:600;color:#e2e8f0;}
+.sel-inline{width:100%;background:#0a1223;border:1px solid rgba(30,58,138,.4);border-radius:8px;padding:7px 10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;color:#e2e8f0;outline:none;cursor:pointer;transition:border .15s;}
+.sel-inline:focus{border-color:var(--blue);}
+
+/* ── Comments ── */
+.comment{display:flex;gap:10px;margin-bottom:14px;}
+.com-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#001933,rgba(0,118,245,.4));border:1px solid rgba(0,118,245,.3);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:#60a5fa;flex-shrink:0;margin-top:2px;}
+.com-av.cust{background:linear-gradient(135deg,#001a00,rgba(34,197,94,.3));border-color:rgba(34,197,94,.3);color:#86efac;}
+.com-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a;margin-bottom:4px;}
+.com-meta strong{color:#94a3b8;}
+.com-text{font-size:13px;line-height:1.6;background:rgba(0,118,245,.05);border:1px solid rgba(30,58,138,.2);padding:10px 12px;border-radius:0 10px 10px 10px;}
+.com-wrap{display:flex;gap:8px;margin-top:14px;}
+.com-input{flex:1;background:#0a1223;border:1px solid rgba(30,58,138,.4);border-radius:9px;padding:9px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:#e2e8f0;outline:none;}
+.com-input:focus{border-color:var(--blue);}
+.com-input::placeholder{color:#1e3a5f;}
+
+/* ── Portal ── */
+.portal-card{background:var(--card-bg);backdrop-filter:blur(12px);border:1px solid rgba(30,58,138,.25);border-radius:16px;padding:28px;margin-bottom:20px;}
+.portal-card h3{font-size:15px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px;letter-spacing:-0.01em;}
+.portal-icon{width:36px;height:36px;border-radius:9px;background:rgba(0,118,245,.1);border:1px solid rgba(0,118,245,.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+
+/* ── Toast ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:linear-gradient(135deg,#0a1223,#060e1c);border:1px solid rgba(30,58,138,.4);border-radius:12px;padding:12px 16px;font-size:13px;box-shadow:0 20px 50px rgba(0,0,0,.6);display:flex;align-items:center;gap:8px;animation:tslide .2s ease;max-width:300px;}
+.toast.ok{border-color:rgba(34,197,94,.3);color:#86efac;}
+.toast.err{border-color:rgba(239,68,68,.3);color:#fca5a5;}
+@keyframes tslide{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.empty{text-align:center;padding:60px 20px;color:#1e3a5f;}
+.empty-ic{font-size:36px;margin-bottom:12px;opacity:.4;}
+.loading{text-align:center;padding:40px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1e3a5f;letter-spacing:1px;}
+
+/* ── Neon label ── */
+.neon-text{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#60a5fa;text-shadow:0 0 6px rgba(96,165,250,1),0 0 18px rgba(0,118,245,.9),0 0 40px rgba(0,118,245,.4);animation:neon 3s ease-in-out infinite;}
+@keyframes neon{0%,100%{opacity:1}50%{opacity:.7}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<!-- Header -->
+<header class="fixed w-full z-50 border-b border-blue-900/30" style="background:rgba(2,6,12,0.9);backdrop-filter:blur(20px);height:60px;">
+  <div class="h-full flex items-center justify-between px-6">
+    <div class="flex items-center gap-3">
+      <img src="phronexsec-logo.png" alt="PhronexSec" style="height:34px;filter:drop-shadow(0 0 8px rgba(0,118,245,.7));" onerror="this.style.display='none';document.getElementById('logo-text').style.display='block'">
+      <span id="logo-text" style="display:none;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#60a5fa;letter-spacing:2px;text-shadow:0 0 12px rgba(0,118,245,.8)">PHRONEXSEC</span>
+      <div style="width:1px;height:24px;background:rgba(0,118,245,0.2)"></div>
+      <span class="neon-text">Support Portal</span>
+    </div>
+    <a href="/" class="btn btn-ghost btn-sm" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;">
+      <i class="fa-solid fa-arrow-left" style="font-size:10px"></i> VOLTAR AO SITE
+    </a>
+  </div>
+</header>
+
+<!-- Layout -->
+<div style="display:flex;padding-top:60px;height:100vh;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#334155;letter-spacing:1px;">SUPPORT SYSTEM</div>
+      <div class="sys-status">SISTEMA OPERACIONAL</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Painel</div>
+      <button class="nav-btn active" onclick="showView('dashboard')" id="nav-dashboard">
+        <i class="fa-solid fa-chart-line" style="font-size:13px;width:16px"></i> Dashboard
+      </button>
+      <button class="nav-btn" onclick="showView('tickets')" id="nav-tickets">
+        <i class="fa-solid fa-ticket" style="font-size:13px;width:16px"></i> Tickets
+        <span class="nav-badge" id="open-count">0</span>
+      </button>
+      <div class="nav-section">Clientes</div>
+      <button class="nav-btn" onclick="showView('portal')" id="nav-portal">
+        <i class="fa-solid fa-user-shield" style="font-size:13px;width:16px"></i> Portal Cliente
+      </button>
+      <button class="nav-btn" onclick="showView('email')" id="nav-email">
+        <i class="fa-solid fa-envelope" style="font-size:13px;width:16px"></i> Email Ingest
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="agent-pill">
+        <div class="av">CS</div>
+        <div>
+          <div class="agent-name">Carlos Silva</div>
+          <div class="agent-role">SUPPORT AGENT</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <h1 id="page-title">Dashboard</h1>
+      <div class="search-wrap" id="search-wrap" style="display:none">
+        <i class="fa-solid fa-magnifying-glass search-ic"></i>
+        <input class="search" type="text" placeholder="Buscar tickets..." id="search-input" oninput="filterTickets()">
+      </div>
+      <button class="btn btn-primary" id="new-btn" onclick="openNewTicket()" style="display:none">
+        <i class="fa-solid fa-plus"></i> Novo Ticket
+      </button>
+    </div>
+    <div class="content" id="content">
+      <div class="loading">INICIALIZANDO...</div>
+    </div>
+  </main>
+</div>
+
+<!-- New Ticket Modal -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal-box">
+    <div class="mhead">
+      <div class="mhead-info">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e4a8a;letter-spacing:2px;margin-bottom:4px;">NOVO TICKET</div>
+        <div style="font-size:16px;font-weight:700;">Abrir Chamado</div>
+      </div>
+      <button class="mclose" onclick="closeModal('modal-new')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="mbody">
+      <div class="frow">
+        <div class="fgroup"><label class="flabel">Nome do Cliente</label><input class="finput" id="n-name" placeholder="João Silva"></div>
+        <div class="fgroup"><label class="flabel">Email *</label><input class="finput" type="email" id="n-email" placeholder="joao@empresa.com"></div>
+      </div>
+      <div class="fgroup"><label class="flabel">Assunto *</label><input class="finput" id="n-title" placeholder="Descreva brevemente o problema"></div>
+      <div class="fgroup"><label class="flabel">Descrição</label><textarea class="ftarea" id="n-desc" placeholder="Detalhes do problema..."></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label class="flabel">Prioridade</label>
+          <select class="fctrl" id="n-priority">
+            <option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option><option value="critical">Crítica</option>
+          </select>
+        </div>
+        <div class="fgroup"><label class="flabel">Categoria</label>
+          <select class="fctrl" id="n-category">
+            <option value="general">Geral</option><option value="bug">Bug</option><option value="billing">Faturamento</option><option value="network">Rede</option><option value="firewall">Firewall</option><option value="question">Dúvida</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createTicket()"><i class="fa-solid fa-plus"></i> Criar Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal-box wide">
+    <div class="mhead">
+      <div class="mhead-info">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e4a8a;letter-spacing:2px;margin-bottom:4px;" id="d-id">TK-000</div>
+        <div style="font-size:16px;font-weight:700;" id="d-title">Ticket</div>
+      </div>
+      <button class="mclose" onclick="closeModal('modal-detail')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="mbody" id="d-body"></div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const API = (window.location.hostname==='localhost'?'http://localhost:3001':'')+'/api';
+let allTickets=[],agents=[],curFilters={status:'all',priority:'all',agent:'all'};
+
+function toast(msg,type='ok'){
+  const w=document.getElementById('toasts'),t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<i class="fa-solid fa-${type==='ok'?'check-circle':'exclamation-circle'}"></i> ${msg}`;
+  w.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+function ago(iso){const d=(Date.now()-new Date(iso))/1000;if(d<60)return'agora';if(d<3600)return`${~~(d/60)}m`;if(d<86400)return`${~~(d/3600)}h`;return`${~~(d/86400)}d`;}
+function fmt(iso){return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});}
+function sbadge(s){return`<span class="badge b-${s}">${s.replace('_',' ')}</span>`;}
+function pbadge(p){const lbl={low:'Baixa',medium:'Média',high:'Alta',critical:'Crítica'};return`<span class="badge b-${p}">${lbl[p]||p}</span>`;}
+function ini(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
+function updateBadge(){const n=allTickets.filter(t=>t.status==='open').length;document.getElementById('open-count').textContent=n;}
+
+// ── Nav ──
+function showView(v){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-'+v).classList.add('active');
+  const titles={dashboard:'Dashboard',tickets:'Todos os Tickets',portal:'Portal do Cliente',email:'Email Ingest'};
+  document.getElementById('page-title').textContent=titles[v];
+  const showT=v==='tickets';
+  document.getElementById('search-wrap').style.display=showT?'':'none';
+  document.getElementById('new-btn').style.display=showT?'':'none';
+  if(v==='dashboard')renderDashboard();
+  if(v==='tickets')renderTickets();
+  if(v==='portal')renderPortal();
+  if(v==='email')renderEmail();
+}
+
+// ── Dashboard ──
+async function renderDashboard(){
+  const c=document.getElementById('content');
+  c.innerHTML='<div class="loading">CARREGANDO DADOS...</div>';
+  try{
+    const [stats,tix]=await Promise.all([fetch(`${API}/stats`).then(r=>r.json()),fetch(`${API}/tickets`).then(r=>r.json())]);
+    allTickets=tix;updateBadge();
+    c.innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card stat-open"><div class="stat-label">Abertos</div><div class="stat-val">${stats.open}</div></div>
+      <div class="stat-card stat-prog"><div class="stat-label">Em Andamento</div><div class="stat-val">${stats.inProgress}</div></div>
+      <div class="stat-card stat-res"><div class="stat-label">Resolvidos</div><div class="stat-val">${stats.resolved}</div></div>
+      <div class="stat-card stat-urg"><div class="stat-label">Alta Prioridade</div><div class="stat-val">${stats.highPriority}</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e4a8a;letter-spacing:2px;">TICKETS RECENTES</div>
+      <button class="btn btn-ghost btn-sm" onclick="showView('tickets')">Ver todos <i class="fa-solid fa-arrow-right" style="font-size:10px"></i></button>
+    </div>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>ID</th><th>Assunto</th><th>Cliente</th><th>Status</th><th>Prioridade</th><th>Atualizado</th></tr></thead>
+      <tbody>${tix.slice(0,6).map(t=>trow(t)).join('')||emptyRow(6)}</tbody>
+    </table></div>`;
+  }catch(e){c.innerHTML=`<div class="empty"><div class="empty-ic"><i class="fa-solid fa-triangle-exclamation"></i></div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1px">API OFFLINE — PORTA 3001</div></div>`;}
+}
+
+function trow(t){return`<tr onclick="openDetail('${t.id}')">
+  <td><span class="tid">${t.id}</span></td>
+  <td><div class="ttitle">${t.title}</div><div class="tcat">${t.category}</div></td>
+  <td style="font-size:12px;color:#64748b">${t.customer.name}</td>
+  <td>${sbadge(t.status)}</td><td>${pbadge(t.priority)}</td>
+  <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a">${ago(t.updatedAt)}</td>
+</tr>`;}
+function emptyRow(cols){return`<tr><td colspan="${cols}"><div class="empty"><div class="empty-ic"><i class="fa-solid fa-ticket"></i></div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px">NENHUM TICKET</div></div></td></tr>`;}
+
+// ── Tickets ──
+async function renderTickets(){
+  const c=document.getElementById('content');
+  c.innerHTML='<div class="loading">CARREGANDO...</div>';
+  try{
+    const [tix,ags]=await Promise.all([fetch(`${API}/tickets`).then(r=>r.json()),fetch(`${API}/agents`).then(r=>r.json())]);
+    allTickets=tix;agents=ags;updateBadge();renderTable();
+  }catch(e){c.innerHTML=`<div class="empty"><div class="empty-ic"><i class="fa-solid fa-triangle-exclamation"></i></div><div style="font-size:13px">Não foi possível conectar à API.</div></div>`;}
+}
+
+function renderTable(){
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase();
+  const filtered=allTickets.filter(t=>{
+    const ms=!q||[t.title,t.id,t.customer.name,t.customer.email].some(s=>s.toLowerCase().includes(q));
+    const mst=curFilters.status==='all'||t.status===curFilters.status;
+    const mp=curFilters.priority==='all'||t.priority===curFilters.priority;
+    const ma=curFilters.agent==='all'||t.agent===curFilters.agent;
+    return ms&&mst&&mp&&ma;
+  });
+  const agOpts=agents.map(a=>`<option value="${a.name}" ${curFilters.agent===a.name?'selected':''}>${a.name}</option>`).join('');
+  document.getElementById('content').innerHTML=`
+  <div class="filters">
+    <select class="fsel" onchange="setF('status',this.value)">
+      <option value="all">Todos os Status</option>
+      <option value="open" ${curFilters.status==='open'?'selected':''}>Aberto</option>
+      <option value="in_progress" ${curFilters.status==='in_progress'?'selected':''}>Em Andamento</option>
+      <option value="resolved" ${curFilters.status==='resolved'?'selected':''}>Resolvido</option>
+      <option value="closed" ${curFilters.status==='closed'?'selected':''}>Fechado</option>
+    </select>
+    <select class="fsel" onchange="setF('priority',this.value)">
+      <option value="all">Todas Prioridades</option>
+      <option value="critical">Crítica</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option>
+    </select>
+    <select class="fsel" onchange="setF('agent',this.value)">
+      <option value="all">Todos os Agentes</option>${agOpts}
+    </select>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a">${filtered.length} TICKET${filtered.length!==1?'S':''}</span>
+  </div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>ID</th><th>Assunto</th><th>Cliente</th><th>Agente</th><th>Status</th><th>Prioridade</th><th>Criado</th></tr></thead>
+    <tbody>${filtered.map(t=>trow2(t)).join('')||emptyRow(7)}</tbody>
+  </table></div>`;
+}
+
+function trow2(t){return`<tr onclick="openDetail('${t.id}')">
+  <td><span class="tid">${t.id}</span></td>
+  <td><div class="ttitle">${t.title}</div><div class="tcat">${t.category}</div></td>
+  <td style="font-size:12px"><span style="color:#e2e8f0">${t.customer.name}</span><br><span style="color:#1e4a8a;font-family:'JetBrains Mono',monospace;font-size:10px">${t.customer.email}</span></td>
+  <td style="font-size:12px">${t.agent?`<div style="display:flex;align-items:center;gap:6px"><div class="av" style="width:22px;height:22px;font-size:8px">${ini(t.agent)}</div><span style="color:#64748b">${t.agent}</span></div>`:'<span style="color:#1e3a5f;font-family:JetBrains Mono,monospace;font-size:10px">—</span>'}</td>
+  <td>${sbadge(t.status)}</td><td>${pbadge(t.priority)}</td>
+  <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a">${ago(t.createdAt)}</td>
+</tr>`;}
+
+function filterTickets(){renderTable();}
+function setF(k,v){curFilters[k]=v;renderTable();}
+
+// ── Detail ──
+async function openDetail(id){
+  const t=await fetch(`${API}/tickets/${id}`).then(r=>r.json());
+  const ags=await fetch(`${API}/agents`).then(r=>r.json());
+  document.getElementById('d-id').textContent=t.id+' · '+t.category.toUpperCase();
+  document.getElementById('d-title').textContent=t.title;
+  const agOpts=ags.map(a=>`<option value="${a.name}" ${t.agent===a.name?'selected':''}>${a.name}</option>`).join('');
+  const comments=t.comments.map(c=>`
+    <div class="comment">
+      <div class="com-av ${c.role==='customer'?'cust':''}">${ini(c.author)}</div>
+      <div style="flex:1">
+        <div class="com-meta"><strong>${c.author}</strong> · ${c.role} · ${ago(c.createdAt)}</div>
+        <div class="com-text">${c.text}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('d-body').innerHTML=`
+  <div style="display:flex;gap:8px;margin-bottom:20px">${sbadge(t.status)}${pbadge(t.priority)}</div>
+  <div class="detail-grid">
+    <div>
+      <div class="dsection">
+        <div class="dsection-title">Descrição</div>
+        <div style="font-size:13px;line-height:1.7;color:#94a3b8">${t.description||'<em style="color:#1e3a5f">Sem descrição.</em>'}</div>
+      </div>
+      <div class="dsection">
+        <div class="dsection-title">Comentários (${t.comments.length})</div>
+        ${comments||'<div style="color:#1e3a5f;font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:1px">SEM COMENTÁRIOS</div>'}
+        <div class="com-wrap">
+          <input class="com-input" id="com-${id}" placeholder="Adicionar comentário..." onkeydown="if(event.key==='Enter')addCom('${id}')">
+          <button class="btn btn-primary btn-sm" onclick="addCom('${id}')"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="dsection">
+        <div class="dsection-title">Controles</div>
+        <div class="irow"><span class="ilabel">Status</span></div>
+        <div style="margin-bottom:10px"><select class="sel-inline" onchange="patch('${id}','status',this.value)">
+          <option value="open" ${t.status==='open'?'selected':''}>Aberto</option>
+          <option value="in_progress" ${t.status==='in_progress'?'selected':''}>Em Andamento</option>
+          <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolvido</option>
+          <option value="closed" ${t.status==='closed'?'selected':''}>Fechado</option>
+        </select></div>
+        <div class="irow"><span class="ilabel">Prioridade</span></div>
+        <div style="margin-bottom:10px"><select class="sel-inline" onchange="patch('${id}','priority',this.value)">
+          <option value="low" ${t.priority==='low'?'selected':''}>Baixa</option>
+          <option value="medium" ${t.priority==='medium'?'selected':''}>Média</option>
+          <option value="high" ${t.priority==='high'?'selected':''}>Alta</option>
+          <option value="critical" ${t.priority==='critical'?'selected':''}>Crítica</option>
+        </select></div>
+        <div class="irow"><span class="ilabel">Agente</span></div>
+        <div><select class="sel-inline" onchange="patch('${id}','agent',this.value)">
+          <option value="">Não atribuído</option>${agOpts}
+        </select></div>
+      </div>
+      <div class="dsection">
+        <div class="dsection-title">Cliente</div>
+        <div class="irow"><span class="ilabel">Nome</span><span class="ival">${t.customer.name}</span></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a;word-break:break-all">${t.customer.email}</div>
+      </div>
+      <div class="dsection">
+        <div class="dsection-title">Timeline</div>
+        <div class="irow"><span class="ilabel">Criado</span><span class="ival" style="font-size:11px">${fmt(t.createdAt)}</span></div>
+        <div class="irow"><span class="ilabel">Atualizado</span><span class="ival" style="font-size:11px">${ago(t.updatedAt)}</span></div>
+      </div>
+      <button class="btn btn-danger btn-sm" style="width:100%" onclick="delTicket('${id}')"><i class="fa-solid fa-trash"></i> Excluir</button>
+    </div>
+  </div>`;
+  openModal('modal-detail');
+}
+
+async function patch(id,f,v){
+  await fetch(`${API}/tickets/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({[f]:v})});
+  toast(f+' atualizado');
+  if(document.getElementById('nav-tickets').classList.contains('active'))renderTickets();
+  else renderDashboard();
+}
+
+async function addCom(id){
+  const inp=document.getElementById('com-'+id);
+  const text=inp.value.trim();if(!text)return;
+  await fetch(`${API}/tickets/${id}/comments`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({author:'Carlos Silva',role:'agent',text})});
+  inp.value='';toast('Comentário adicionado');openDetail(id);
+}
+
+async function delTicket(id){
+  if(!confirm('Excluir este ticket?'))return;
+  await fetch(`${API}/tickets/${id}`,{method:'DELETE'});
+  closeModal('modal-detail');toast('Ticket excluído');
+  if(document.getElementById('nav-tickets').classList.contains('active'))renderTickets();
+  else renderDashboard();
+}
+
+// ── New ticket ──
+function openNewTicket(){openModal('modal-new');}
+async function createTicket(){
+  const title=document.getElementById('n-title').value.trim();
+  const email=document.getElementById('n-email').value.trim();
+  if(!title||!email)return toast('Assunto e email são obrigatórios','err');
+  const body={title,description:document.getElementById('n-desc').value,priority:document.getElementById('n-priority').value,category:document.getElementById('n-category').value,customer:{name:document.getElementById('n-name').value||email.split('@')[0],email}};
+  const r=await fetch(`${API}/tickets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){toast('Ticket criado com sucesso!');closeModal('modal-new');['n-title','n-email','n-name','n-desc'].forEach(i=>document.getElementById(i).value='');renderTickets();}
+  else toast('Erro ao criar ticket','err');
+}
+
+// ── Portal ──
+function renderPortal(){
+  document.getElementById('content').innerHTML=`
+  <div style="max-width:600px;margin:0 auto">
+    <div style="text-align:center;padding:32px 20px 28px">
+      <div class="neon-text" style="margin-bottom:10px">PORTAL DO CLIENTE</div>
+      <h2 style="font-size:28px;font-weight:800;margin-bottom:8px">Central de Suporte</h2>
+      <p style="color:#334155;font-size:14px">Abra um chamado ou verifique o status de um ticket existente.</p>
+    </div>
+    <div class="portal-card">
+      <h3><div class="portal-icon"><i class="fa-solid fa-ticket" style="color:#60a5fa"></i></div> Abrir Chamado</h3>
+      <div class="frow"><div class="fgroup"><label class="flabel">Seu Nome</label><input class="finput" id="p-name" placeholder="João Silva"></div><div class="fgroup"><label class="flabel">Email *</label><input class="finput" type="email" id="p-email" placeholder="joao@empresa.com"></div></div>
+      <div class="fgroup"><label class="flabel">Assunto *</label><input class="finput" id="p-title" placeholder="Descreva o problema"></div>
+      <div class="fgroup"><label class="flabel">Descrição</label><textarea class="ftarea" id="p-desc" placeholder="Detalhes..."></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label class="flabel">Prioridade</label><select class="fctrl" id="p-prio"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select></div>
+        <div class="fgroup"><label class="flabel">Categoria</label><select class="fctrl" id="p-cat"><option value="general">Geral</option><option value="network">Rede</option><option value="firewall">Firewall</option><option value="billing">Faturamento</option><option value="bug">Bug</option></select></div>
+      </div>
+      <button class="btn btn-primary" onclick="portalSubmit()" style="width:100%;justify-content:center"><i class="fa-solid fa-paper-plane"></i> Enviar Chamado</button>
+      <div id="p-result" style="margin-top:14px"></div>
+    </div>
+    <div class="portal-card">
+      <h3><div class="portal-icon"><i class="fa-solid fa-magnifying-glass" style="color:#60a5fa"></i></div> Verificar Status</h3>
+      <div style="display:flex;gap:10px">
+        <input class="finput" id="p-check" placeholder="ID do ticket (ex: TK-001)" style="flex:1">
+        <button class="btn btn-ghost" onclick="portalCheck()">Verificar</button>
+      </div>
+      <div id="p-check-result" style="margin-top:14px"></div>
+    </div>
+  </div>`;
+}
+
+async function portalSubmit(){
+  const email=document.getElementById('p-email').value.trim();
+  const title=document.getElementById('p-title').value.trim();
+  if(!email||!title)return toast('Email e assunto obrigatórios','err');
+  const r=await fetch(`${API}/portal/submit`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('p-name').value,email,title,description:document.getElementById('p-desc').value,priority:document.getElementById('p-prio').value,category:document.getElementById('p-cat').value})});
+  const d=await r.json();
+  if(r.ok){
+    document.getElementById('p-result').innerHTML=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px;font-size:13px"><i class="fa-solid fa-check-circle" style="color:#86efac"></i> <strong style="color:#86efac">Chamado criado!</strong> Seu ID é <strong style="font-family:'JetBrains Mono',monospace;color:#60a5fa">${d.id}</strong>. Guarde para acompanhar o status.</div>`;
+    ['p-name','p-email','p-title','p-desc'].forEach(i=>document.getElementById(i).value='');
+  }
+}
+
+async function portalCheck(){
+  const id=document.getElementById('p-check').value.trim().toUpperCase();
+  if(!id)return;
+  const r=await fetch(`${API}/portal/status/${id}`);
+  const el=document.getElementById('p-check-result');
+  if(!r.ok){el.innerHTML=`<div style="color:#fca5a5;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px">TICKET NÃO ENCONTRADO</div>`;return;}
+  const t=await r.json();
+  el.innerHTML=`<div style="background:rgba(0,118,245,.06);border:1px solid rgba(0,118,245,.15);border-radius:10px;padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">${sbadge(t.status)}<span style="font-weight:600">${t.title}</span></div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a">Atualizado ${ago(t.updatedAt)} · ${t.comments.length} comentário(s)</div>
+  </div>`;
+}
+
+// ── Email ──
+function renderEmail(){
+  document.getElementById('content').innerHTML=`
+  <div style="max-width:580px">
+    <div style="margin-bottom:20px;background:rgba(0,118,245,.05);border:1px solid rgba(0,118,245,.15);border-radius:10px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#1e4a8a;line-height:1.8">
+      Simule o recebimento de um email de suporte. Em produção, conecte ao webhook do Mailgun, SendGrid ou servidor IMAP.
+    </div>
+    <div class="portal-card">
+      <h3><div class="portal-icon"><i class="fa-solid fa-envelope" style="color:#60a5fa"></i></div> Simular Email Recebido</h3>
+      <div class="fgroup"><label class="flabel">De (From)</label><input class="finput" id="e-from" placeholder='João Silva <joao@empresa.com>'></div>
+      <div class="fgroup"><label class="flabel">Assunto (Subject)</label><input class="finput" id="e-subj" placeholder="Assunto vira o título do ticket"></div>
+      <div class="fgroup"><label class="flabel">Corpo (Body)</label><textarea class="ftarea" id="e-body" placeholder="Conteúdo do email..." style="min-height:120px"></textarea></div>
+      <button class="btn btn-primary" onclick="ingestEmail()" style="width:100%;justify-content:center"><i class="fa-solid fa-inbox"></i> Ingerir → Criar Ticket</button>
+      <div id="e-result" style="margin-top:14px"></div>
+    </div>
+    <div style="background:#0a1223;border:1px solid rgba(30,58,138,.3);border-radius:10px;padding:16px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#1e4a8a;letter-spacing:2px;margin-bottom:10px">ENDPOINT API</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#3b82f6;line-height:1.8">POST /api/email/ingest<br><span style="color:#475569">{ "from": "...", "subject": "...", "body": "..." }</span></div>
+    </div>
+  </div>`;
+}
+
+async function ingestEmail(){
+  const from=document.getElementById('e-from').value.trim();
+  const subject=document.getElementById('e-subj').value.trim();
+  if(!from||!subject)return toast('From e Subject obrigatórios','err');
+  const r=await fetch(`${API}/email/ingest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from,subject,body:document.getElementById('e-body').value})});
+  const d=await r.json();
+  if(r.ok){
+    document.getElementById('e-result').innerHTML=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:14px;font-size:13px"><i class="fa-solid fa-check-circle" style="color:#86efac"></i> <strong style="color:#86efac">Ticket criado:</strong> <strong style="font-family:'JetBrains Mono',monospace;color:#60a5fa">${d.id}</strong></div>`;
+    toast(`Ticket ${d.id} criado via email`);
+    ['e-from','e-subj','e-body'].forEach(i=>document.getElementById(i).value='');
+  }
+}
+
+// ── Modal ──
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
+
+// ── Canvas particles (same as phronexsec.com) ──
+const canvas=document.getElementById('bg'),ctx=canvas.getContext('2d');
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize);resize();
+let pts=[];
+for(let i=0;i<120;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5});
+(function frame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pts.forEach((p,i)=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>canvas.width)p.vx*=-1;
+    if(p.y<0||p.y>canvas.height)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,1.2,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,118,245,0.8)';ctx.fill();
+    for(let j=i+1;j<pts.length;j++){
+      const q=pts[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+      if(d<130){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(0,118,245,${(1-d/130)*.2})`;ctx.stroke();}
+    }
+  });
+  requestAnimationFrame(frame);
+})();
+
+showView('dashboard');
+</script>
+</body>
+</html>
