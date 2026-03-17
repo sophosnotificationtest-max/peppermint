@@ -196,12 +196,10 @@ tbody tr:hover td{background:rgba(0,118,245,.05);}
     <div id="form-agent">
       <div class="auth-title">Acesso de Agente</div>
       <div class="auth-sub">EQUIPE PHRONEXSEC</div>
-      <div class="fg"><label class="flabel">Email</label><input class="finput" id="ag-email" type="email" placeholder="carlos@phronexsec.com"></div>
+      <div class="fg"><label class="flabel">Email</label><input class="finput" id="ag-email" type="email" placeholder="usuario@phronexsec.com"></div>
       <div class="fg"><label class="flabel">Senha</label><input class="finput" id="ag-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginAgent()"></div>
       <button class="btn-auth" onclick="loginAgent()"><i class="fa-solid fa-shield-halved" style="margin-right:6px"></i> Entrar no Painel</button>
-      <div style="margin-top:16px;font-size:11px;color:#1e3a5f;text-align:center;font-family:'JetBrains Mono',monospace;line-height:1.8">
-        admin@phronexsec.com / admin123<br>carlos@phronexsec.com / carlos123
-      </div>
+
     </div>
 
     <!-- Customer login/register -->
@@ -216,9 +214,7 @@ tbody tr:hover td{background:rgba(0,118,245,.05);}
         <div class="fg"><label class="flabel">Email</label><input class="finput" id="cu-email" type="email" placeholder="voce@empresa.com"></div>
         <div class="fg"><label class="flabel">Senha</label><input class="finput" id="cu-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginCustomer()"></div>
         <button class="btn-auth" onclick="loginCustomer()"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i> Entrar</button>
-        <div style="margin-top:14px;font-size:11px;color:#1e3a5f;text-align:center;font-family:'JetBrains Mono',monospace;line-height:1.8">
-          ana@acme.com / ana123<br>bruno@beta.io / bruno123
-        </div>
+
       </div>
       <div id="c-register" style="display:none">
         <div class="auth-title">Criar Conta</div>
@@ -243,6 +239,7 @@ tbody tr:hover td{background:rgba(0,118,245,.05);}
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <span id="hdr-user" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#1e4a8a;letter-spacing:1px"></span>
+      <button class="btn btn-ghost btn-sm" onclick="openModal("modal-pw")"><i class="fa-solid fa-key" style="font-size:10px"></i> Senha</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket" style="font-size:10px"></i> Sair</button>
     </div>
   </div>
@@ -321,6 +318,28 @@ tbody tr:hover td{background:rgba(0,118,245,.05);}
       <button class="mclose" onclick="closeModal('modal-detail')"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="mbody" id="d-body"></div>
+  </div>
+</div>
+
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="modal-pw">
+  <div class="mbox" style="max-width:420px">
+    <div class="mhead">
+      <div><div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#1e4a8a;letter-spacing:2px;margin-bottom:4px">SEGURANCA</div><div style="font-size:16px;font-weight:700">Trocar Senha</div></div>
+      <button class="mclose" onclick="closeModal('modal-pw')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="mbody">
+      <div id="pw-err" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:14px;display:none"></div>
+      <div id="pw-ok" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#86efac;margin-bottom:14px;display:none"></div>
+      <div class="fg"><label class="fl">Senha Atual</label><input class="fi" type="password" id="pw-current" placeholder="Sua senha atual"></div>
+      <div class="fg"><label class="fl">Nova Senha</label><input class="fi" type="password" id="pw-new" placeholder="Minimo 6 caracteres"></div>
+      <div class="fg"><label class="fl">Confirmar Nova Senha</label><input class="fi" type="password" id="pw-confirm" placeholder="Repita a nova senha" onkeydown="if(event.key==='Enter')changePassword()"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeModal('modal-pw')">Cancelar</button>
+      <button class="btn btn-primary" onclick="changePassword()"><i class="fa-solid fa-key"></i> Alterar Senha</button>
+    </div>
   </div>
 </div>
 
